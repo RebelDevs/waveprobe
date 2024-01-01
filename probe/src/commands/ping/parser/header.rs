@@ -1,18 +1,10 @@
 use regex::Regex;
 
 #[derive(Debug)]
+#[derive(Default)]
 pub struct Header {
     hostname: Option<String>,
     address: Option<String>,
-}
-
-impl Default for Header {
-    fn default() -> Self {
-        Self {
-            hostname: None,
-            address: None,
-        }
-    }
 }
 
 pub fn extract(data: &str) -> Header {

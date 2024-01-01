@@ -20,22 +20,12 @@ impl Default for RTT {
 }
 
 #[derive(Debug)]
+#[derive(Default)]
 pub struct Packets {
     total: i8,
     loss: i8,
     rcv: i8,
     drop: i8,
-}
-
-impl Default for Packets {
-    fn default() -> Self {
-        Self {
-            total: 0,
-            loss: 0,
-            rcv: 0,
-            drop: 0,
-        }
-    }
 }
 
 pub fn extract(data: &str) -> (RTT, Packets) {
