@@ -69,3 +69,68 @@ fn extract_packets(data: &str) -> Packets {
 
     return packets;
 }
+
+#[cfg(test)]
+mod tests_rtt {
+    use super::*;
+
+    #[test]
+    fn success() {
+        let data = "rtt min/avg/max/mdev = 4.779/4.802/4.817/0.016 ms";
+        let result = extract_rtt(data);
+
+        assert_eq!(result.min, 4.779);
+        assert_eq!(result.avg, 4.802);
+        assert_eq!(result.max, 4.817);
+        assert_eq!(result.mdev, 0.016);
+    }
+
+    #[test]
+    fn no_match() {
+        let data = "rtt min/avg/max/mdev = nodata ms";
+        let result = extract_rtt(data);
+
+        assert_eq!(result.min, 0.0);
+        assert_eq!(result.avg, 0.0);
+        assert_eq!(result.max, 0.0);
+        assert_eq!(result.mdev, 0.0);
+    }
+}
+
+#[cfg(test)]
+mod tests_packets {
+    use super::*;
+
+    #[test]
+    fn success() {
+        let data = "3 packets transmitted, 3 received, 0% packet loss, time 402ms";
+        let result = extract_packets(data);
+
+        assert_eq!(result.total, 3);
+        assert_eq!(result.rcv, 3);
+        assert_eq!(result.loss, 0);
+        assert_eq!(result.drop, 0);
+    }
+
+    #[test]
+    fn drop() {
+        let data = "3 packets transmitted, 0 received, 0% packet loss, time 402ms";
+        let result = extract_packets(data);
+
+        assert_eq!(result.total, 3);
+        assert_eq!(result.rcv, 0);
+        assert_eq!(result.loss, 0);
+        assert_eq!(result.drop, 3);
+    }
+
+    #[test]
+    fn no_match() {
+        let data = " packets transmitted,malformed received, 0% packet loss, time 402ms";
+        let result = extract_packets(data);
+
+        assert_eq!(result.total, 0);
+        assert_eq!(result.rcv, 0);
+        assert_eq!(result.loss, 0);
+        assert_eq!(result.drop, 0);
+    }
+}
