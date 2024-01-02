@@ -17,3 +17,28 @@ pub fn extract(data: &str) -> Header {
 
     return header;
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn should_suceed() {
+        let data = "PING elocast.com (123.123.123.123) 56(84) bytes of data.";
+        let result = extract(data);
+
+        assert_eq!(result.hostname, Some("elocast.com".to_string()));
+        assert_eq!(result.address, Some("123.123.123.123".to_string()));
+    }
+
+    #[test]
+    fn no_ip() {
+        let data = "PING elocast.com () 56(84) bytes of data.";
+        let result = extract(data);
+
+        println!("{:#?}", result);
+
+        assert_eq!(result.hostname, Some("elocast.com".to_string()));
+        assert_eq!(result.address, None);
+    }
+}
