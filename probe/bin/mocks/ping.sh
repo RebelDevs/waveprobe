@@ -21,10 +21,10 @@ if [ "$TARGET" = "error" ]; then
   exit 1;
 fi
 
-echo "PING google.com (142.251.129.142) 56(84) bytes of data.
-64 bytes from gru14s31-in-f14.1e100.net (142.251.129.142): icmp_seq=1 ttl=60 time=3.34 ms
-64 bytes from gru14s31-in-f14.1e100.net (142.251.129.142): icmp_seq=2 ttl=60 time=3.35 ms
-64 bytes from gru14s31-in-f14.1e100.net (142.251.129.142): icmp_seq=3 ttl=60 time=3.38 ms
+echo "PING success (1.2.3.4) 56(84) bytes of data.
+64 bytes from success (1.2.3.4): icmp_seq=1 ttl=60 time=3.34 ms
+64 bytes from success (1.2.3.4): icmp_seq=2 ttl=60 time=3.35 ms
+64 bytes from success (1.2.3.4): icmp_seq=3 ttl=60 time=3.38 ms
 
 --- google.com ping statistics ---
 3 packets transmitted, 3 received, 0% packet loss, time 401ms

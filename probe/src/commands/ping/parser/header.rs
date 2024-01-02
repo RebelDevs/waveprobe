@@ -2,8 +2,8 @@ use regex::Regex;
 
 #[derive(Debug, Default)]
 pub struct Header {
-    hostname: Option<String>,
-    address: Option<String>,
+    pub hostname: Option<String>,
+    pub address: Option<String>,
 }
 
 pub fn extract(data: &str) -> Header {

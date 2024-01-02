@@ -2,18 +2,18 @@ use regex::Regex;
 
 #[derive(Debug, Default)]
 pub struct RTT {
-    min: f32,
-    avg: f32,
-    max: f32,
-    mdev: f32,
+    pub min: f32,
+    pub avg: f32,
+    pub max: f32,
+    pub mdev: f32,
 }
 
 #[derive(Debug, Default)]
 pub struct Packets {
-    total: i8,
-    loss: i8,
-    rcv: i8,
-    drop: i8,
+    pub total: i8,
+    pub loss: i8,
+    pub rcv: i8,
+    pub drop: i8,
 }
 
 pub fn extract(data: &str) -> (RTT, Packets) {
