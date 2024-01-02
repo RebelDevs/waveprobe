@@ -1,22 +1,11 @@
 use regex::Regex;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct RTT {
     min: f32,
     avg: f32,
     max: f32,
     mdev: f32,
-}
-
-impl Default for RTT {
-    fn default() -> Self {
-        Self {
-            min: 0.0,
-            avg: 0.0,
-            max: 0.0,
-            mdev: 0.0,
-        }
-    }
 }
 
 #[derive(Debug, Default)]
