@@ -2,8 +2,7 @@ use super::header;
 use super::lines;
 use super::stats;
 
-#[derive(Debug)]
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct Values {
     pub header: header::Header,
     pub lines: Vec<lines::Line>,

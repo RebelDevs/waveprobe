@@ -1,5 +1,4 @@
 #[allow(clippy::needless_return)]
-
 mod commands;
 
 fn main() {

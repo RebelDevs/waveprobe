@@ -1,7 +1,6 @@
 use regex::Regex;
 
-#[derive(Debug)]
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct Header {
     hostname: Option<String>,
     address: Option<String>,

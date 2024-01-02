@@ -19,8 +19,7 @@ impl Default for RTT {
     }
 }
 
-#[derive(Debug)]
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct Packets {
     total: i8,
     loss: i8,
