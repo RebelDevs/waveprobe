@@ -1,6 +1,10 @@
-use super::parser;
+use serde::{Serialize, Deserialize};
 use std::env;
 
+use super::parser;
+use super::super::utils::posix;
+
+#[derive(Serialize, Deserialize)]
 pub struct Options {
     pub hostname: String,
     pub packets: u8,
@@ -40,7 +44,7 @@ fn execute_ping(options: Options) -> Result<String, String> {
         options.hostname,
     ];
 
-    super::super::utils::posix::run(script_path.to_string(), args)
+    posix::run(script_path.to_string(), args)
 }
 
 fn get_script_path() -> String {

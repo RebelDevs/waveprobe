@@ -4,6 +4,8 @@ extern crate dotenv;
 use dotenv::dotenv;
 
 mod commands;
+mod queue;
+use queue::handlers::command_execute;
 
 fn main() {
     dotenv().ok();
@@ -12,7 +14,20 @@ fn main() {
         hostname: "google.com".to_string(),
         packets: 4,
     };
+    let command = command_execute::handler::CommandRequest {
+        command: String::from("ping"),
+        id: String::from("123"),
+        options,
+    };
 
-    let result = commands::ping::ping::run(options);
-    println!("{:#?}", result);
+    match serde_json::to_string(&command) {
+        Ok(json) => {
+            let result = command_execute::handler::handle(json.as_bytes());
+            println!("{:?}", json);
+            println!("{:?}", result);
+        },
+        Err(e) => {
+            println!("{}", e);
+        }
+    }
 }
