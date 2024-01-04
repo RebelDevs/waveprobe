@@ -25,7 +25,7 @@ fn main() {
             let result = command_execute::handler::handle(json.as_bytes());
             println!("{:?}", json);
             println!("{:?}", result);
-        },
+        }
         Err(e) => {
             println!("{}", e);
         }

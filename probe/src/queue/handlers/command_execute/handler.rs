@@ -1,6 +1,6 @@
 use super::super::super::super::commands;
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 #[derive(Serialize, Deserialize)]
@@ -33,7 +33,8 @@ pub fn handle(payload: &[u8]) -> Result<CommandInstance, String> {
 
     match payload_json.get("command").and_then(Value::as_str) {
         Some("ping") => {
-            let request: Result<CommandRequest<commands::ping::ping::Options>, serde_json::Error> = serde_json::from_value(payload_json);
+            let request: Result<CommandRequest<commands::ping::ping::Options>, serde_json::Error> =
+                serde_json::from_value(payload_json);
 
             if let Err(e) = request {
                 println!("parse error, {}", e);
@@ -45,11 +46,11 @@ pub fn handle(payload: &[u8]) -> Result<CommandInstance, String> {
             let command = commands::ping::ping::run(request_json.options);
             let instance = CommandInstance {
                 id: request_json.id,
-                result: CommandResultEnum::Ping(command)
+                result: CommandResultEnum::Ping(command),
             };
 
             Ok(instance)
-        },
+        }
         _ => {
             println!("Unknown command");
             Err("unknown_command".to_string())

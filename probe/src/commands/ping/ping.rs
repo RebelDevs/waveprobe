@@ -1,8 +1,8 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use std::env;
 
-use super::parser;
 use super::super::utils::posix;
+use super::parser;
 
 #[derive(Serialize, Deserialize)]
 pub struct Options {
