@@ -21,7 +21,7 @@ pub struct CommandInstance {
     pub result: CommandResultEnum,
 }
 
-pub fn handle(payload: &[u8]) -> Result<CommandInstance, String> {
+pub async fn handle(payload: &[u8]) -> Result<CommandInstance, String> {
     let payload_serde: Result<Value, serde_json::Error> = serde_json::from_slice(payload);
 
     if let Err(e) = payload_serde {

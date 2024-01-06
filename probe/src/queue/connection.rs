@@ -1,6 +1,8 @@
+use super::super::commands;
 use super::handlers::command_execute;
 use regex::Regex;
 use rumqttc::{AsyncClient, Event, EventLoop, Incoming, MqttOptions, QoS};
+use serde_json;
 use std::env;
 use std::time::Duration;
 use tokio::{task, time};
@@ -18,13 +20,20 @@ pub async fn init() {
     let client_clone = client.clone();
     task::spawn(async move {
         for i in 0..10 {
+            let options = commands::ping::ping::Options {
+                hostname: "google.com".to_string(),
+                packets: 4,
+            };
+            let command = command_execute::handler::CommandRequest {
+                command: String::from("ping"),
+                id: String::from("123"),
+                options,
+            };
+
+            let data = serde_json::to_string(&command).unwrap();
+
             client_clone
-                .publish(
-                    "some_id/command/request",
-                    QoS::AtLeastOnce,
-                    false,
-                    format!("hello {}", i),
-                )
+                .publish("some_id/command/request", QoS::AtLeastOnce, false, data)
                 .await
                 .unwrap();
             time::sleep(Duration::from_millis(100)).await;
@@ -43,14 +52,16 @@ async fn listen_to_events(_client: &AsyncClient, eventloop: &mut EventLoop) {
                     let command_re = Regex::new(r"^(.*)/command/request$").unwrap();
 
                     if command_re.is_match(&publish.topic) {
-                        match command_execute::handler::handle(&publish.payload) {
-                            Ok(result) => {
-                                println!("Result, {:#?}", result);
+                        task::spawn(async move {
+                            match command_execute::handler::handle(&publish.payload).await {
+                                Ok(result) => {
+                                    println!("Result, {:?}", result);
+                                }
+                                Err(e) => {
+                                    println!("err, {}", e);
+                                }
                             }
-                            Err(e) => {
-                                println!("err, {}", e);
-                            }
-                        }
+                        });
                     } else {
                         println!(
                             "Received = {}",

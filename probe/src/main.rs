@@ -29,7 +29,7 @@ async fn main() {
 
         match serde_json::to_string(&command) {
             Ok(json) => {
-                let result = command_execute::handler::handle(json.as_bytes());
+                let result = command_execute::handler::handle(json.as_bytes()).await;
                 println!("{:?}", json);
                 println!("{:?}", result);
             }
