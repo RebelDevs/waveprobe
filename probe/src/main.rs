@@ -7,8 +7,11 @@ mod commands;
 mod queue;
 use queue::handlers::command_execute;
 
-fn main() {
+#[tokio::main]
+async fn main() {
     dotenv().ok();
+
+    queue::connection::init().await;
 
     let options = commands::ping::ping::Options {
         hostname: "google.com".to_string(),
