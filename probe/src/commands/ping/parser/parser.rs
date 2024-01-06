@@ -1,8 +1,9 @@
 use super::header;
 use super::lines;
 use super::stats;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Default)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub struct Values {
     pub header: header::Header,
     pub lines: Vec<lines::Line>,

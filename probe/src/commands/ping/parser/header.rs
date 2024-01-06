@@ -1,6 +1,7 @@
 use regex::Regex;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Default)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub struct Header {
     pub hostname: Option<String>,
     pub address: Option<String>,

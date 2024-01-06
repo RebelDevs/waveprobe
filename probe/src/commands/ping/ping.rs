@@ -10,7 +10,7 @@ pub struct Options {
     pub packets: u8,
 }
 
-#[derive(Debug, Default)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub struct PingResult {
     pub posix: String,
     pub values: parser::Values,

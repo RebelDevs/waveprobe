@@ -1,6 +1,7 @@
 use regex::Regex;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Default)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub struct RTT {
     pub min: f32,
     pub avg: f32,
@@ -8,7 +9,7 @@ pub struct RTT {
     pub mdev: f32,
 }
 
-#[derive(Debug, Default)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub struct Packets {
     pub total: i8,
     pub loss: i8,

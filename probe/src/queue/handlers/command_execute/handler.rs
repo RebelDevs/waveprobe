@@ -10,12 +10,12 @@ pub struct CommandRequest<T> {
     pub options: T,
 }
 
-#[derive(Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub enum CommandResultEnum {
     Ping(commands::ping::ping::PingResult),
 }
 
-#[derive(Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct CommandInstance {
     pub id: String,
     pub result: CommandResultEnum,
