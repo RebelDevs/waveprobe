@@ -2,7 +2,7 @@ use super::super::commands;
 use super::handlers::command_execute;
 use async_recursion::async_recursion;
 use regex::Regex;
-use rumqttc::{AsyncClient, Event, EventLoop, Incoming, MqttOptions, Publish, QoS};
+use rumqttc::{AsyncClient, Event, EventLoop, Incoming, MqttOptions, QoS};
 use serde::Serialize;
 use serde_json;
 use std::env;
@@ -54,7 +54,7 @@ pub async fn init() {
         match listen_to_events(&client, &mut eventloop).await {
             Ok(_) => break,
             Err(_) => {
-                let ( new_client, new_eventloop ) = connect();
+                let (new_client, new_eventloop) = connect();
                 client = new_client;
                 eventloop = new_eventloop;
                 test_loop.abort();
@@ -108,7 +108,7 @@ async fn listen_to_events(client: &AsyncClient, eventloop: &mut EventLoop) -> Re
             },
             Err(e) => {
                 eprintln!("Error: {}", e);
-                return Err(format!("event loop error, {}", e))
+                return Err(format!("event loop error, {}", e));
             }
         }
     }
