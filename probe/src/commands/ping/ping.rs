@@ -16,9 +16,9 @@ pub struct PingResult {
     pub values: parser::Values,
 }
 
-pub fn run(options: Options) -> PingResult {
+pub async fn run(options: Options) -> PingResult {
     let mut result = PingResult::default();
-    let posix_result = execute_ping(options);
+    let posix_result = execute_ping(options).await;
 
     match posix_result {
         Ok(str) => {
@@ -33,7 +33,7 @@ pub fn run(options: Options) -> PingResult {
     return result;
 }
 
-fn execute_ping(options: Options) -> Result<String, String> {
+async fn execute_ping(options: Options) -> Result<String, String> {
     let script_path = get_script_path();
 
     let args = vec![
@@ -44,7 +44,7 @@ fn execute_ping(options: Options) -> Result<String, String> {
         options.hostname,
     ];
 
-    posix::run(script_path.to_string(), args)
+    posix::run(script_path.to_string(), args).await
 }
 
 fn get_script_path() -> String {

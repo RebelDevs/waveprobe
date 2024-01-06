@@ -43,7 +43,7 @@ pub async fn handle(payload: &[u8]) -> Result<CommandInstance, String> {
 
             let request_json = request.unwrap();
 
-            let command = commands::ping::ping::run(request_json.options);
+            let command = commands::ping::ping::run(request_json.options).await;
             let instance = CommandInstance {
                 id: request_json.id,
                 result: CommandResultEnum::Ping(command),

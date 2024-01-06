@@ -1,7 +1,8 @@
-use std::process::{Command, Output};
+use std::process::Output;
+use tokio::process::Command;
 
-pub fn run(script: String, args: Vec<String>) -> Result<String, String> {
-    let process = execute(script, args);
+pub async fn run(script: String, args: Vec<String>) -> Result<String, String> {
+    let process = execute(script, args).await;
 
     let stdres = if process.status.success() {
         process.stdout
@@ -24,11 +25,12 @@ pub fn run(script: String, args: Vec<String>) -> Result<String, String> {
     }
 }
 
-fn execute(script: String, args: Vec<String>) -> Output {
-    return Command::new(script)
+async fn execute(script: String, args: Vec<String>) -> Output {
+    Command::new(script)
         .args(args)
         .output()
-        .expect("failed to start command");
+        .await
+        .expect("failed to parse result")
 }
 
 #[cfg(test)]
