@@ -1,5 +1,6 @@
 use super::super::commands;
 use super::handlers::command_execute;
+use async_recursion::async_recursion;
 use regex::Regex;
 use rumqttc::{AsyncClient, Event, EventLoop, Incoming, MqttOptions, Publish, QoS};
 use serde::Serialize;
@@ -91,21 +92,12 @@ async fn listen_to_events(client: &AsyncClient, eventloop: &mut EventLoop) {
                                 Err(e) => eprintln!("err, {}", e),
                             }
                         });
-                    } else {
-                        println!(
-                            "Received = {}",
-                            String::from_utf8(publish.payload.to_vec()).unwrap()
-                        );
                     }
                 }
-                // Handle other events...
-                _ => {
-                    println!("Other = {:?}", notification);
-                }
+                _ => {}
             },
             Err(e) => {
                 eprintln!("Error: {}", e);
-                break; // Or handle the error (e.g., retry connection)
             }
         }
     }
