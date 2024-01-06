@@ -1,2 +1,4 @@
 /server/target
 /probe/target
+/docker/mosquitto/log
+/docker/mosquitto/data

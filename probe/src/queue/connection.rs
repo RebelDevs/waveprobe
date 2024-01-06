@@ -123,7 +123,7 @@ async fn subscribe_to_all(client: &AsyncClient) {
 
 fn get_connection_data() -> ConnectionSettings {
     ConnectionSettings {
-        uri: env::var("MQTT_URI").map_or("broker.emqx.io".to_string(), |x| x),
+        uri: env::var("MQTT_URI").map_or("0.0.0.0".to_string(), |x| x),
         port: env::var("MQTT_PORT")
             .ok()
             .and_then(|x| x.parse::<u16>().ok())
