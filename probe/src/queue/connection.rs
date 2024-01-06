@@ -135,6 +135,6 @@ fn connect() -> (AsyncClient, EventLoop) {
     let env_options = get_connection_data();
 
     let mut mqttoptions = MqttOptions::new("some_id", env_options.uri, env_options.port);
-    mqttoptions.set_keep_alive(Duration::from_secs(5));
+    mqttoptions.set_keep_alive(Duration::from_secs(10));
     AsyncClient::new(mqttoptions, 10)
 }
