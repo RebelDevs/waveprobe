@@ -14,16 +14,16 @@ struct ConnectionSettings {
     port: u16,
 }
 
-fn execute_test_queues(client: &AsyncClient) {
+fn execute_test_queues(client: &AsyncClient) -> tokio::task::JoinHandle<()> {
     let client_clone = client.clone();
     task::spawn(async move {
         publish_test_queues(&client_clone).await;
-    });
+    })
 }
 
 #[async_recursion]
 async fn publish_test_queues(client: &AsyncClient) {
-    for _ in 0..1 {
+    for _ in 0..10 {
         let options = commands::ping::ping::Options {
             hostname: "google.com".to_string(),
             packets: 4,
@@ -34,7 +34,7 @@ async fn publish_test_queues(client: &AsyncClient) {
             options,
         };
 
-        publish(&client, "some_id/command/request".to_string(), command).await;
+        publish(client, "some_id/command/request".to_string(), command).await;
         time::sleep(Duration::from_millis(100)).await;
     }
 
@@ -43,14 +43,24 @@ async fn publish_test_queues(client: &AsyncClient) {
 }
 
 pub async fn init() {
-    let (client, mut eventloop) = connect();
-    subscribe_to_all(&client).await;
+    let (mut client, mut eventloop) = connect();
+    loop {
+        subscribe_to_all(&client).await;
 
-    // test
-    execute_test_queues(&client);
-    // test end
+        // test
+        let test_loop = execute_test_queues(&client);
+        // test end
 
-    listen_to_events(&client, &mut eventloop).await;
+        match listen_to_events(&client, &mut eventloop).await {
+            Ok(_) => break,
+            Err(_) => {
+                let ( new_client, new_eventloop ) = connect();
+                client = new_client;
+                eventloop = new_eventloop;
+                test_loop.abort();
+            }
+        }
+    }
 }
 
 async fn publish<T: Serialize>(client: &AsyncClient, topic: String, data: T) {
@@ -72,10 +82,10 @@ async fn publish<T: Serialize>(client: &AsyncClient, topic: String, data: T) {
 async fn publish_response<T: Serialize>(client: &AsyncClient, topic: String, data: T) {
     let response_replace_re = Regex::new(r"\/request$").unwrap();
     let response_topic = response_replace_re.replace(&topic, "/response").to_string();
-    publish(&client, response_topic, data).await;
+    publish(client, response_topic, data).await;
 }
 
-async fn listen_to_events(client: &AsyncClient, eventloop: &mut EventLoop) {
+async fn listen_to_events(client: &AsyncClient, eventloop: &mut EventLoop) -> Result<(), String> {
     loop {
         match eventloop.poll().await {
             Ok(notification) => match notification {
@@ -98,6 +108,7 @@ async fn listen_to_events(client: &AsyncClient, eventloop: &mut EventLoop) {
             },
             Err(e) => {
                 eprintln!("Error: {}", e);
+                return Err(format!("event loop error, {}", e))
             }
         }
     }
