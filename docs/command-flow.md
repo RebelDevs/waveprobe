@@ -31,18 +31,28 @@
 
 ### ping values schema
 
+
+#### Line
+
+```
+  {
+    hostname: string
+    address: string
+    ttl: number
+    time: number
+  }
+```
+
+
+#### Ping schema
+
 ```
   {
     header: {
       hostname: string
       address: string
     }
-    lines: {
-      hostname: string
-      address: string
-      ttl: number
-      time: number
-    }[]
+    lines: Line[]
     rtt: {
       min: number
       avg: number
