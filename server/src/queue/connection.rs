@@ -61,13 +61,12 @@ async fn listen_to_events(_client: &AsyncClient, eventloop: &mut EventLoop) -> R
         match eventloop.poll().await {
             Ok(notification) => match notification {
                 Event::Incoming(Incoming::Publish(data)) => {
-                    let command_response_re = Regex::new(r"^(.*)/command/response$").unwrap();
                     let command_ack_re = Regex::new(r"^(.*)/command/ack$").unwrap();
 
-                    if command_response_re.is_match(&data.topic) {
-                        let _ = handlers::cmd_resp::handle(&data.payload);
-                    } else if command_ack_re.is_match(&data.topic) {
+                    if command_ack_re.is_match(&data.topic) {
                         println!("command ack");
+                    } else if handlers::cmd_resp::is_match(&data.topic) {
+                        let _ = handlers::cmd_resp::handle(&data.payload);
                     }
                 }
                 _ => {}
