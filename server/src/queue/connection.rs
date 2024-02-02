@@ -81,7 +81,7 @@ async fn listen_to_events(_client: &AsyncClient, eventloop: &mut EventLoop) -> R
 
 async fn subscribe_to_all(client: &AsyncClient) {
     let ack = client.subscribe("+/command/ack", QoS::AtMostOnce);
-    let response = client.subscribe("+/command/response", QoS::AtMostOnce);
+    let response = client.subscribe(handlers::cmd_resp::SUB_NAME, QoS::AtMostOnce);
 
     tokio::join!(ack, response);
 }
