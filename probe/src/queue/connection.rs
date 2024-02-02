@@ -1,45 +1,15 @@
-use super::super::commands;
 use super::handlers::command_execute;
-use async_recursion::async_recursion;
 use regex::Regex;
 use rumqttc::{AsyncClient, Event, EventLoop, Incoming, MqttOptions, QoS};
 use serde::Serialize;
 use serde_json;
 use std::env;
 use std::time::Duration;
-use tokio::{task, time};
+use tokio::task;
 
 struct ConnectionSettings {
     uri: String,
     port: u16,
-}
-
-fn execute_test_queues(client: &AsyncClient) -> tokio::task::JoinHandle<()> {
-    let client_clone = client.clone();
-    task::spawn(async move {
-        publish_test_queues(&client_clone).await;
-    })
-}
-
-#[async_recursion]
-async fn publish_test_queues(client: &AsyncClient) {
-    for _ in 0..10 {
-        let options = commands::ping::ping::Options {
-            hostname: "google.com".to_string(),
-            packets: 4,
-        };
-        let command = command_execute::handler::CommandRequest {
-            command: String::from("ping"),
-            id: String::from("123"),
-            options,
-        };
-
-        publish(client, "some_id/command/request".to_string(), command).await;
-        time::sleep(Duration::from_millis(100)).await;
-    }
-
-    time::sleep(Duration::from_millis(10000)).await;
-    publish_test_queues(client).await;
 }
 
 pub async fn init() {
@@ -47,17 +17,12 @@ pub async fn init() {
     loop {
         subscribe_to_all(&client).await;
 
-        // test
-        let test_loop = execute_test_queues(&client);
-        // test end
-
         match listen_to_events(&client, &mut eventloop).await {
             Ok(_) => break,
             Err(_) => {
                 let (new_client, new_eventloop) = connect();
                 client = new_client;
                 eventloop = new_eventloop;
-                test_loop.abort();
             }
         }
     }
