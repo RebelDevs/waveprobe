@@ -81,7 +81,7 @@ async fn listen_to_events(client: &AsyncClient, eventloop: &mut EventLoop) -> Re
 
 async fn subscribe_to_all(client: &AsyncClient) {
     client
-        .subscribe("some_id/command/request", QoS::AtMostOnce)
+        .subscribe("+/command/request", QoS::AtMostOnce)
         .await
         .unwrap();
 }
