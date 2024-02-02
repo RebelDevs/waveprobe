@@ -1,9 +1,14 @@
+use commands::exec::CommandResultEnum;
 use regex::Regex;
 use rumqttc::{AsyncClient, Event, EventLoop, Incoming, MqttOptions, QoS};
 use serde::Serialize;
-use serde_json;
+use serde_json::{self, Error, Value};
 use std::env;
 use std::time::Duration;
+
+use crate::commands::exec::CommandInstance;
+
+use super::super::commands;
 
 struct ConnectionSettings {
     uri: String,
@@ -14,6 +19,18 @@ pub async fn init() {
     let (mut client, mut eventloop) = connect();
     loop {
         subscribe_to_all(&client).await;
+
+        let options = commands::ping::ping::Options {
+            hostname: "google.com".to_string(),
+            packets: 4,
+        };
+        let command = commands::exec::CommandRequest {
+            command: String::from("ping"),
+            id: String::from("123"),
+            options,
+        };
+
+        publish(&client, "uk/command/request".to_string(), command).await;
 
         match listen_to_events(&client, &mut eventloop).await {
             Ok(_) => break,
@@ -51,7 +68,32 @@ async fn listen_to_events(client: &AsyncClient, eventloop: &mut EventLoop) -> Re
                     let command_ack_re = Regex::new(r"^(.*)/command/ack$").unwrap();
 
                     if command_response_re.is_match(&data.topic) {
-                        println!("command response, {:#?}", data);
+                        let payload: Result<Value, Error> = serde_json::from_slice(&data.payload);
+
+                        if let Err(e) = payload {
+                            println!("parse_error, {}", e.to_string());
+                            return Err("some random error".to_string());
+                        }
+
+                        let payload_json = payload.unwrap();
+                        let instance: Result<CommandInstance, serde_json::Error> =
+                            serde_json::from_value(payload_json);
+                        if let Err(e) = instance {
+                            println!("{}", e.to_string());
+                            return Err("unknown instance type".to_string());
+                        }
+
+                        let instance_parsed = instance.unwrap();
+
+                        match instance_parsed.result {
+                            CommandResultEnum::Ping(ping) => {
+                                println!("found ping");
+                                println!("{:#?}", ping);
+                            }
+                            _ => {
+                                println!("found something");
+                            }
+                        }
                     } else if command_ack_re.is_match(&data.topic) {
                         println!("command ack");
                     }
@@ -70,17 +112,7 @@ async fn subscribe_to_all(client: &AsyncClient) {
     let ack = client.subscribe("+/command/ack", QoS::AtMostOnce);
     let response = client.subscribe("+/command/response", QoS::AtMostOnce);
 
-    let subs = tokio::join!(ack, response);
-    let subs = [subs.0, subs.1];
-
-    for sub in subs {
-        match sub {
-            Ok(_) => {}
-            Err(e) => {
-                eprintln!("subscription error, {}", e);
-            }
-        }
-    }
+    tokio::join!(ack, response);
 }
 
 fn get_connection_data() -> ConnectionSettings {

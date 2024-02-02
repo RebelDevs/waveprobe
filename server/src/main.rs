@@ -1,5 +1,6 @@
 #![allow(clippy::needless_return)]
 
+mod commands;
 mod queue;
 
 extern crate dotenv;
