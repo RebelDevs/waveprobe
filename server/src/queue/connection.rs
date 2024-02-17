@@ -1,46 +1,47 @@
-use crate::commands;
 use super::handlers;
+use crate::commands;
 use regex::Regex;
 use rumqttc::{AsyncClient, Event, EventLoop, Incoming, MqttOptions, QoS};
 use serde::Serialize;
 use serde_json::{self};
 use std::env;
+use std::sync::Arc;
 use std::time::Duration;
+use tokio::sync::Mutex;
 
 struct ConnectionSettings {
     uri: String,
     port: u16,
 }
 
-pub async fn init() {
-    let (mut client, mut eventloop) = connect();
-    loop {
-        subscribe_to_all(&client).await;
+pub async fn init() -> AsyncClient {
+    let (client, eventloop) = connect();
+    subscribe_to_all(&client).await;
 
-        let options = commands::ping::ping::Options {
-            hostname: "google.com".to_string(),
-            packets: 4,
-        };
-        let command = commands::exec::CommandRequest {
-            command: String::from("ping"),
-            id: String::from("123"),
-            options,
-        };
+    // TODO: remove test publish
+    let options = commands::ping::ping::Options {
+        hostname: "google.com".to_string(),
+        packets: 4,
+    };
+    let command = commands::exec::CommandRequest {
+        command: String::from("ping"),
+        id: String::from("123"),
+        options,
+    };
+    publish(&client, "uk/command/request".to_string(), command).await;
 
-        publish(&client, "uk/command/request".to_string(), command).await;
-
-        match listen_to_events(&client, &mut eventloop).await {
-            Ok(_) => break,
-            Err(_) => {
-                let (new_client, new_eventloop) = connect();
-                client = new_client;
-                eventloop = new_eventloop;
-            }
+    let client_clone = client.clone();
+    tokio::spawn(async move {
+        let el_mutex = Arc::new(Mutex::new(eventloop));
+        loop {
+            poll_events(&client_clone, el_mutex.clone()).await;
         }
-    }
+    });
+
+    return client;
 }
 
-async fn publish<T: Serialize>(client: &AsyncClient, topic: String, data: T) {
+pub async fn publish<T: Serialize>(client: &AsyncClient, topic: String, data: T) {
     let result_bytes = serde_json::to_string(&data).unwrap();
     let publish_result = client
         .publish(topic.clone(), QoS::AtLeastOnce, false, result_bytes)
@@ -56,34 +57,46 @@ async fn publish<T: Serialize>(client: &AsyncClient, topic: String, data: T) {
     };
 }
 
-async fn listen_to_events(_client: &AsyncClient, eventloop: &mut EventLoop) -> Result<(), String> {
-    loop {
-        match eventloop.poll().await {
-            Ok(notification) => match notification {
-                Event::Incoming(Incoming::Publish(data)) => {
-                    let command_ack_re = Regex::new(r"^(.*)/command/ack$").unwrap();
+async fn poll_events(_client: &AsyncClient, el_mutex: Arc<Mutex<EventLoop>>) {
+    let mut el = el_mutex.lock().await;
+    match el.poll().await {
+        Ok(notification) => match notification {
+            Event::Incoming(Incoming::Publish(data)) => {
+                let command_ack_re = Regex::new(r"^(.*)/command/ack$").unwrap();
 
-                    if command_ack_re.is_match(&data.topic) {
-                        println!("command ack");
-                    } else if handlers::cmd_resp::is_match(&data.topic) {
-                        let _ = handlers::cmd_resp::handle(&data.payload);
-                    }
+                if command_ack_re.is_match(&data.topic) {
+                    println!("command ack");
+                } else if handlers::cmd_resp::is_match(&data.topic) {
+                    let _ = handlers::cmd_resp::handle(&data.payload);
                 }
-                _ => {}
-            },
-            Err(e) => {
-                eprintln!("Error: {}", e);
-                return Err(format!("event loop error, {}", e));
             }
+            _ => {}
+        },
+        Err(e) => {
+            eprintln!("Error: {}", e);
         }
-    }
+    };
 }
 
 async fn subscribe_to_all(client: &AsyncClient) {
     let ack = client.subscribe("+/command/ack", QoS::AtMostOnce);
     let response = client.subscribe(handlers::cmd_resp::SUB_NAME, QoS::AtMostOnce);
 
-    tokio::join!(ack, response);
+    let (ack_output, resp_output) = tokio::join!(ack, response);
+
+    match ack_output {
+        Ok(_) => {}
+        Err(e) => {
+            eprintln!("err: {}", e);
+        }
+    }
+
+    match resp_output {
+        Ok(_) => {}
+        Err(e) => {
+            eprintln!("err: {}", e);
+        }
+    }
 }
 
 fn get_connection_data() -> ConnectionSettings {
