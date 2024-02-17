@@ -1,5 +1,7 @@
 #![allow(clippy::needless_return)]
 
+use warp::Filter;
+
 mod commands;
 mod queue;
 
@@ -14,5 +16,11 @@ async fn main() {
 
     let _client = queue::connection::init().await;
 
-    loop {}
+    let endpoint = warp::path("hello").and(warp::get()).map(|| {
+        return warp::reply::with_status("hello world", warp::http::StatusCode::OK);
+    });
+
+    let router = endpoint.with(warp::log("http"));
+
+    warp::serve(router).run(([0, 0, 0, 0], 3000)).await;
 }
