@@ -1,8 +1,8 @@
 #![allow(clippy::needless_return)]
 
-use warp::Filter;
-
+use axum::extract::Extension;
 mod commands;
+mod http;
 mod queue;
 
 extern crate dotenv;
@@ -14,13 +14,16 @@ use tokio;
 async fn main() {
     dotenv().ok();
 
-    let _client = queue::connection::init().await;
+    // v1
+    let queue_client = queue::connection::init().await;
+    let v1_router = axum::Router::new()
+        .nest("/", http::v1::register())
+        .layer(Extension(queue_client))
+        .fallback(http::not_found);
 
-    let endpoint = warp::path("hello").and(warp::get()).map(|| {
-        return warp::reply::with_status("hello world", warp::http::StatusCode::OK);
-    });
+    // api
+    let app = axum::Router::new().nest("/api/v1", v1_router);
 
-    let router = endpoint.with(warp::log("http"));
-
-    warp::serve(router).run(([0, 0, 0, 0], 3000)).await;
+    let server = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
+    axum::serve(server, app).await.unwrap();
 }
