@@ -1,6 +1,7 @@
 #![allow(clippy::needless_return)]
 
-use axum::extract::Extension;
+use std::sync::Arc;
+
 mod commands;
 mod http;
 mod queue;
@@ -15,10 +16,10 @@ async fn main() {
     dotenv().ok();
 
     // v1
-    let queue_client = queue::connection::init().await;
+    let queue_client = Arc::new(queue::connection::init().await);
     let v1_router = axum::Router::new()
         .nest("/", http::v1::register())
-        .layer(Extension(queue_client))
+        .layer(axum::Extension(queue_client.clone()))
         .fallback(http::not_found);
 
     // api
