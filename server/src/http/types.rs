@@ -7,7 +7,7 @@ pub type ApiResponse<T> = (
 );
 
 #[derive(Serialize, Deserialize, Debug, Default, Clone)]
-pub struct ResponseBody {
+pub struct ErrorResponseBody {
     pub message: String,
     pub error_code: String,
 }
@@ -15,5 +15,5 @@ pub struct ResponseBody {
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct HttpError {
     expose: bool,
-    body: ResponseBody,
+    body: ErrorResponseBody,
 }
