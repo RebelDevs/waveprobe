@@ -2,13 +2,45 @@ use crate::commands;
 use crate::http::types;
 use crate::queue;
 use axum::extract::{Extension, Json};
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
 use std::sync::Arc;
 
-#[derive(Deserialize, Debug)]
+#[derive(Serialize, Debug)]
 pub struct RequestBody {
     command: String,
-    options: commands::ping::ping::Options,
+    options: OptionsEnum,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(untagged)]
+enum OptionsEnum {
+    Ping(commands::ping::ping::Options),
+}
+
+impl<'de> Deserialize<'de> for RequestBody {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let v: serde_json::Value = serde_json::Value::deserialize(deserializer)?;
+
+        let command = v
+            .get("command")
+            .and_then(|s| serde_json::Value::as_str(s).map(|s| s.to_lowercase()))
+            .ok_or_else(|| serde::de::Error::missing_field("command"))?;
+
+        let options = match command.as_str() {
+            "ping" => serde_json::from_value(v.get("options").unwrap().clone())
+                .map(OptionsEnum::Ping)
+                .map_err(serde::de::Error::custom)?,
+            _ => return Err(serde::de::Error::custom("unknown command")),
+        };
+
+        return Ok(RequestBody {
+            command: command.to_owned(),
+            options,
+        });
+    }
 }
 
 #[derive(Serialize, Debug)]
