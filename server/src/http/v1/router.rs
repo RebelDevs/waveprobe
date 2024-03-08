@@ -1,7 +1,7 @@
-use super::hello;
+use super::command;
 
 pub fn register() -> axum::Router {
-    let router = axum::Router::new().nest("/hello", hello::router());
+    let router = axum::Router::new().nest("/command", command::router());
 
     return router;
 }
