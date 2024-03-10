@@ -1,6 +1,6 @@
-use crate::commands;
 use crate::http::types;
 use crate::queue;
+use crate::{commands, http::v1::utils::body_parser::JsonBody};
 use axum::extract::{Extension, Json};
 use serde::{Deserialize, Deserializer, Serialize};
 use std::sync::Arc;
@@ -50,8 +50,14 @@ pub struct ResponseBody {
 
 pub async fn post_request(
     Extension(queue_client): Extension<Arc<rumqttc::AsyncClient>>,
-    Json(body): Json<RequestBody>,
+    JsonBody(body): JsonBody<RequestBody>,
 ) -> types::ApiResponse<ResponseBody> {
+    // generate id
+    // save measurement in db
+    // publish command request
+    // - whats the prefix??
+    // return id
+
     let id = String::from("123");
 
     let command = commands::exec::CommandRequest {
