@@ -7,6 +7,8 @@ use std::sync::Arc;
 
 #[derive(Serialize, Debug)]
 pub struct RequestBody {
+    location: String,
+    limit: i16,
     command: String,
     options: OptionsEnum,
 }
@@ -36,8 +38,22 @@ impl<'de> Deserialize<'de> for RequestBody {
             _ => return Err(serde::de::Error::custom("unknown command")),
         };
 
+        let limit = v
+            .get("limit")
+            .and_then(serde_json::Value::as_i64)
+            .map(|val| val as i16)
+            .unwrap_or(10);
+
+        let location = v
+            .get("location")
+            .and_then(serde_json::Value::as_str)
+            .map(|s| s.to_owned())
+            .unwrap_or("*".to_owned());
+
         return Ok(RequestBody {
             command: command.to_owned(),
+            limit,
+            location,
             options,
         });
     }
@@ -54,18 +70,16 @@ pub async fn post_request(
 ) -> types::ApiResponse<ResponseBody> {
     // generate id
     // save measurement in db
-    // publish command request
-    // - whats the prefix??
-    // return id
-
+    // TODO: replace with db call
     let id = String::from("123");
 
-    let command = commands::exec::CommandRequest {
+    let topic = format!("{}/command/check", body.location);
+    let command = commands::exec::CommandCheck {
         command: body.command,
-        id: id.clone(),
-        options: body.options,
+        request_id: id.clone(),
     };
-    queue::connection::publish(&queue_client, "uk/command/request".to_string(), command).await;
+
+    queue::connection::publish(&queue_client, topic, command).await;
 
     return (
         axum::http::StatusCode::CREATED,
