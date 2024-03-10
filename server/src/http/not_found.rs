@@ -1,6 +1,8 @@
 use crate::http::types;
 
-pub async fn not_found() -> types::ApiResponse<types::ErrorResponseBody> {
+use super::types::HttpError;
+
+pub async fn not_found() -> types::HttpError {
     let headers = {
         let mut headers = axum::http::HeaderMap::new();
         headers.insert("content-type", "application/json".parse().unwrap());
@@ -12,9 +14,9 @@ pub async fn not_found() -> types::ApiResponse<types::ErrorResponseBody> {
         error_code: "not_found".to_string(),
     };
 
-    return (
-        axum::http::StatusCode::NOT_FOUND,
-        headers,
-        axum::response::Json(body),
-    );
+    return HttpError {
+        status: axum::http::StatusCode::NOT_FOUND,
+        headers: Some(headers),
+        body,
+    };
 }

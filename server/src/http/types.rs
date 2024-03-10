@@ -22,9 +22,9 @@ pub struct HttpErrorResponseBody {
 
 #[derive(Debug)]
 pub struct HttpError {
-    status: axum::http::StatusCode,
-    headers: Option<axum::http::HeaderMap>,
-    body: ErrorResponseBody,
+    pub status: axum::http::StatusCode,
+    pub headers: Option<axum::http::HeaderMap>,
+    pub body: ErrorResponseBody,
 }
 
 impl From<axum::extract::rejection::JsonRejection> for HttpError {
