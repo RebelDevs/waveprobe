@@ -3,6 +3,7 @@
 use std::sync::Arc;
 
 mod commands;
+mod db;
 mod http;
 mod queue;
 
@@ -15,11 +16,14 @@ use tokio;
 async fn main() {
     dotenv().ok();
 
+    let db_pool = db::connection::connect().await.unwrap();
+
     // v1
     let queue_client = Arc::new(queue::connection::init().await);
     let v1_router = axum::Router::new()
         .nest("/", http::v1::register())
         .layer(axum::Extension(queue_client.clone()))
+        .layer(axum::Extension(db_pool.clone()))
         .fallback(http::not_found);
 
     // api
