@@ -1,3 +1,4 @@
+use crate::db;
 use crate::http::types;
 use crate::queue;
 use crate::{commands, http::v1::utils::body_parser::JsonBody};
@@ -13,7 +14,7 @@ pub struct RequestBody {
     options: OptionsEnum,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(untagged)]
 enum OptionsEnum {
     Ping(commands::ping::ping::Options),
@@ -66,12 +67,30 @@ pub struct ResponseBody {
 
 pub async fn post_request(
     Extension(queue_client): Extension<Arc<rumqttc::AsyncClient>>,
+    Extension(db_pool): Extension<sqlx::SqlitePool>,
     JsonBody(body): JsonBody<RequestBody>,
-) -> types::ApiResponse<ResponseBody> {
-    // generate id
-    // save measurement in db
-    // TODO: replace with db call
-    let id = String::from("123");
+) -> Result<types::ApiResponse<ResponseBody>, types::HttpError> {
+    let measurement = db::models::measurement::MeasurementCreate {
+        command: body.command.clone(),
+        parameters: serde_json::to_value(body.options).unwrap(),
+        location: body.location.clone(),
+    };
+
+    println!("{:?}", measurement);
+
+    let db_record = db::helpers::measurement::create(measurement, &db_pool).await;
+
+    if db_record.is_err() {
+        return Err(types::HttpError {
+            status: axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            headers: None,
+            body: types::ErrorResponseBody {
+                error_code: "db_error".to_string(),
+                message: "Failed to create record".to_string(),
+            },
+        });
+    }
+    let id = db_record.map(|record| record.id.to_string()).unwrap();
 
     let topic = format!("{}/command/check", body.location);
     let command = commands::exec::CommandCheck {
@@ -81,9 +100,9 @@ pub async fn post_request(
 
     queue::connection::publish(&queue_client, topic, command).await;
 
-    return (
+    return Ok((
         axum::http::StatusCode::CREATED,
         axum::http::HeaderMap::new(),
         Json(ResponseBody { id }),
-    );
+    ));
 }
