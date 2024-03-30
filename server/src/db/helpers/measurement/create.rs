@@ -1,13 +1,14 @@
-use crate::db::models::measurement::{Measurement, MeasurementCreate};
+use super::utils;
+use crate::db::models::measurement::{Measurement, MeasurementCreate, MeasurementRow};
 use chrono;
 
 pub async fn create(
-    measurement: MeasurementCreate,
+    data: MeasurementCreate,
     pool: &sqlx::SqlitePool,
 ) -> Result<Measurement, sqlx::Error> {
     let date = chrono::Utc::now().to_rfc2822();
 
-    let measurement = sqlx::query_as::<_, Measurement>(
+    let row = sqlx::query_as::<_, MeasurementRow>(
         "INSERT INTO measurements (
             command,
             location,
@@ -16,18 +17,18 @@ pub async fn create(
             created_at
         ) VALUES (?, ?, ?, ?, ?) RETURNING *",
     )
-    .bind(measurement.command)
-    .bind(measurement.parameters)
-    .bind(measurement.location)
+    .bind(data.command)
+    .bind(data.location)
+    .bind(data.parameters)
     .bind(&date)
     .bind(&date)
     .fetch_one(pool)
     .await;
 
-    if let Err(e) = measurement {
+    if let Err(e) = row {
         eprintln!("Error: {}", e);
         return Err(e);
     }
 
-    return measurement;
+    return Ok(utils::row_to_measurement(row?));
 }

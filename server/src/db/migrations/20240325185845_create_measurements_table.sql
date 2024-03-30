@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS measurements (
     id INTEGER PRIMARY KEY,
     command TEXT NOT NULL,
-    parameters TEXT NOT NULL,
+    parameters JSONB NOT NULL,
     location TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
