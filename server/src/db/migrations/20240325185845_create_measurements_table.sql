@@ -1,5 +1,6 @@
 CREATE TABLE IF NOT EXISTS measurements (
     id INTEGER PRIMARY KEY,
+    status TEXT NOT NULL DEFAULT 'pending',
     command TEXT NOT NULL,
     parameters JSONB NOT NULL,
     location TEXT NOT NULL,

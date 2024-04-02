@@ -71,15 +71,13 @@ pub async fn post_request(
     JsonBody(body): JsonBody<RequestBody>,
 ) -> Result<types::ApiResponse<ResponseBody>, types::HttpError> {
     let measurement = db::models::measurement::MeasurementCreate {
+        status: db::models::measurement::Status::Pending,
         command: body.command.clone(),
         parameters: serde_json::to_value(body.options).unwrap(),
         location: body.location.clone(),
     };
 
-    println!("{:?}", measurement);
-
     let db_record = db::helpers::measurement::create(measurement, &db_pool).await;
-
     if db_record.is_err() {
         return Err(types::HttpError {
             status: axum::http::StatusCode::INTERNAL_SERVER_ERROR,

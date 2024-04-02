@@ -7,16 +7,19 @@ pub async fn create(
     pool: &sqlx::SqlitePool,
 ) -> Result<Measurement, sqlx::Error> {
     let date = chrono::Utc::now().to_rfc2822();
+    let status = serde_json::to_string(&data.status).unwrap();
 
     let row = sqlx::query_as::<_, MeasurementRow>(
         "INSERT INTO measurements (
+            status,
             command,
             location,
             parameters,
             updated_at,
             created_at
-        ) VALUES (?, ?, ?, ?, ?) RETURNING *",
+        ) VALUES (?, ?, ?, ?, ?, ?) RETURNING *",
     )
+    .bind(status)
     .bind(data.command)
     .bind(data.location)
     .bind(data.parameters)
