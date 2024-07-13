@@ -62,9 +62,16 @@ async fn poll_events(_client: &AsyncClient, el_mutex: Arc<Mutex<EventLoop>>) {
     match el.poll().await {
         Ok(notification) => match notification {
             Event::Incoming(Incoming::Publish(data)) => {
-                let command_ack_re = Regex::new(r"^(.*)/command/ack$").unwrap();
+                let command_ack_re = Regex::new(r"^(.*)/command/check/ack$").unwrap();
 
                 if command_ack_re.is_match(&data.topic) {
+                    let request_id = command_ack_re
+                        .captures(&data.topic)
+                        .and_then(|x| x.get(1))
+                        .map(|x| x.as_str())
+                        .unwrap_or("unknown");
+
+                    println!("command ack: {}", request_id);
                     println!("command ack");
                 } else if handlers::cmd_resp::is_match(&data.topic) {
                     let _ = handlers::cmd_resp::handle(&data.payload);
@@ -79,7 +86,7 @@ async fn poll_events(_client: &AsyncClient, el_mutex: Arc<Mutex<EventLoop>>) {
 }
 
 async fn subscribe_to_all(client: &AsyncClient) {
-    let ack = client.subscribe("+/command/ack", QoS::AtMostOnce);
+    let ack = client.subscribe("+/command/check/ack", QoS::AtMostOnce);
     let response = client.subscribe(handlers::cmd_resp::SUB_NAME, QoS::AtMostOnce);
 
     let (ack_output, resp_output) = tokio::join!(ack, response);
