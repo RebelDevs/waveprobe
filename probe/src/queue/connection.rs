@@ -1,4 +1,4 @@
-use super::handlers::command_execute;
+use super::handlers::{command_execute, command_check};
 use regex::Regex;
 use rumqttc::{AsyncClient, Event, EventLoop, Incoming, MqttOptions, QoS};
 use serde::Serialize;
@@ -50,19 +50,38 @@ async fn publish_response<T: Serialize>(client: &AsyncClient, topic: String, dat
     publish(client, response_topic, data).await;
 }
 
+async fn publish_ack(client: &AsyncClient, probe_id: &str) {
+    let topic_name = format!("{}/command/check/ack", probe_id);
+    println!("Publishing ack to {}", topic_name);
+    publish(client, topic_name, "").await;
+}
+
 async fn listen_to_events(client: &AsyncClient, eventloop: &mut EventLoop) -> Result<(), String> {
     loop {
         match eventloop.poll().await {
             Ok(notification) => match notification {
                 Event::Incoming(Incoming::Publish(data)) => {
-                    let command_re = Regex::new(r"^(.*)/command/request$").unwrap();
+                    let command_request = Regex::new(r"^(.*)/command/request$").unwrap();
+                    let command_check = Regex::new(r"^(.*)/command/check$").unwrap();
 
-                    if command_re.is_match(&data.topic) {
+                    if command_request.is_match(&data.topic) {
                         let client_clone = client.clone();
                         task::spawn(async move {
                             match command_execute::handler::handle(&data.payload).await {
                                 Ok(result) => {
                                     publish_response(&client_clone, data.topic, result).await
+                                }
+                                Err(e) => eprintln!("err, {}", e),
+                            }
+                        });
+                    } else if command_check.is_match(&data.topic) {
+                        println!("Received check command");
+                        let client_clone = client.clone();
+
+                        task::spawn(async move {
+                            match command_check::handler::handle(&data.payload).await {
+                                Ok(id) => {
+                                    publish_ack(&client_clone, &id).await
                                 }
                                 Err(e) => eprintln!("err, {}", e),
                             }
@@ -82,6 +101,11 @@ async fn listen_to_events(client: &AsyncClient, eventloop: &mut EventLoop) -> Re
 async fn subscribe_to_all(client: &AsyncClient) {
     client
         .subscribe("+/command/request", QoS::AtMostOnce)
+        .await
+        .unwrap();
+
+    client
+        .subscribe("+/command/check", QoS::AtMostOnce)
         .await
         .unwrap();
 }
