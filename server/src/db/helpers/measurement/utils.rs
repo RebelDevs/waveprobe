@@ -1,4 +1,4 @@
-use crate::db::models::measurement::{Status, Measurement, MeasurementRow, OptionsEnum};
+use crate::db::models::measurement::{Measurement, MeasurementRow, OptionsEnum, Status};
 
 pub fn row_to_measurement(row: MeasurementRow) -> Measurement {
     let command = row.command.clone();

@@ -1,9 +1,10 @@
-use super::handlers;
+use super::handlers::{self, cmd_check_ack};
 use crate::commands;
 use regex::Regex;
 use rumqttc::{AsyncClient, Event, EventLoop, Incoming, MqttOptions, QoS};
 use serde::Serialize;
 use serde_json::{self};
+use sqlx;
 use std::env;
 use std::sync::Arc;
 use std::time::Duration;
@@ -67,17 +68,11 @@ async fn poll_events(
     match el.poll().await {
         Ok(notification) => match notification {
             Event::Incoming(Incoming::Publish(data)) => {
-                let command_ack_re = Regex::new(r"^(.*)/command/check/ack$").unwrap();
-
-                if command_ack_re.is_match(&data.topic) {
-                    let request_id = command_ack_re
-                        .captures(&data.topic)
-                        .and_then(|x| x.get(1))
-                        .map(|x| x.as_str())
-                        .unwrap_or("unknown");
-
-                    println!("command ack: {}", request_id);
-                    println!("command ack");
+                if handlers::cmd_check_ack::is_match(&data.topic) {
+                    let request_id = cmd_check_ack::extract_id(&data.topic);
+                    let _ =
+                        handlers::cmd_check_ack::handle(client, db_pool, request_id, &data.payload)
+                            .await;
                 } else if handlers::cmd_resp::is_match(&data.topic) {
                     let _ = handlers::cmd_resp::handle(&data.payload);
                 }
