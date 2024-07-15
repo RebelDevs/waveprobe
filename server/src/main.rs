@@ -19,7 +19,7 @@ async fn main() {
     let db_pool = db::connection::connect().await.unwrap();
 
     // v1
-    let queue_client = Arc::new(queue::connection::init().await);
+    let queue_client = Arc::new(queue::connection::init(db_pool.clone()).await);
     let v1_router = axum::Router::new()
         .nest("/", http::v1::register())
         .layer(axum::Extension(queue_client.clone()))

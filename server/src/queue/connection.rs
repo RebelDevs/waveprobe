@@ -14,7 +14,7 @@ struct ConnectionSettings {
     port: u16,
 }
 
-pub async fn init() -> AsyncClient {
+pub async fn init(db_pool: sqlx::SqlitePool) -> AsyncClient {
     let (client, eventloop) = connect();
     subscribe_to_all(&client).await;
 
@@ -29,12 +29,13 @@ pub async fn init() -> AsyncClient {
         options,
     };
     publish(&client, "uk/command/request".to_string(), command).await;
+    */
 
     let client_clone = client.clone();
     tokio::spawn(async move {
         let el_mutex = Arc::new(Mutex::new(eventloop));
         loop {
-            poll_events(&client_clone, el_mutex.clone()).await;
+            poll_events(&client_clone, el_mutex.clone(), &db_pool).await;
         }
     });
 
@@ -57,7 +58,11 @@ pub async fn publish<T: Serialize>(client: &AsyncClient, topic: String, data: T)
     };
 }
 
-async fn poll_events(_client: &AsyncClient, el_mutex: Arc<Mutex<EventLoop>>) {
+async fn poll_events(
+    client: &AsyncClient,
+    el_mutex: Arc<Mutex<EventLoop>>,
+    db_pool: &sqlx::SqlitePool,
+) {
     let mut el = el_mutex.lock().await;
     match el.poll().await {
         Ok(notification) => match notification {
